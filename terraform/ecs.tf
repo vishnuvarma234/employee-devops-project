@@ -24,7 +24,7 @@ resource "aws_ecs_task_definition" "employee_app" {
   container_definitions = jsonencode([
     {
       name      = "employee-app"
-      image     = aws_ecr_repository.employee_app.repository_url
+      image      = "${aws_ecr_repository.employee_app.repository_url}:latest"
       essential = true
 
       portMappings = [
@@ -32,6 +32,13 @@ resource "aws_ecs_task_definition" "employee_app" {
           containerPort = 5000
           hostPort      = 5000
           protocol      = "tcp"
+        }
+      ]
+
+      environment = [
+        {
+          name  = "DATABASE_URL"
+          value = "postgresql+psycopg2://postgres:employee123@employee-postgres.cv8smccw2if0.eu-north-1.rds.amazonaws.com:5432/employee_db"
         }
       ]
 

@@ -60,3 +60,23 @@ resource "aws_route_table_association" "public_subnet_2" {
   subnet_id      = aws_subnet.public_subnet_2.id
   route_table_id = aws_route_table.public.id
 }
+
+resource "aws_subnet" "private_subnet_1" {
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = "10.0.11.0/24"
+  availability_zone = "eu-north-1a"
+
+  tags = {
+    Name = "employee-private-subnet-1"
+  }
+}
+
+resource "aws_subnet" "private_subnet_2" {
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = "10.0.12.0/24"
+  availability_zone = "eu-north-1b"
+
+  tags = {
+    Name = "employee-private-subnet-2"
+  }
+}

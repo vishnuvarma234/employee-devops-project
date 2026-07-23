@@ -66,3 +66,15 @@ output "cloudwatch_log_group" {
   description = "CloudWatch Log Group"
   value       = aws_cloudwatch_log_group.ecs_logs.name
 }
+
+output "rds_endpoint" {
+  value = aws_db_instance.postgres.endpoint
+}
+
+output "database_name" {
+  value = aws_db_instance.postgres.db_name
+}
+
+output "database_username" {
+  value = aws_db_instance.postgres.username
+}
