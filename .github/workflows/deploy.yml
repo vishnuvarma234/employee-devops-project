@@ -1,4 +1,4 @@
-name: Deploy to Amazon ECS
+name: Deploy Employee App
 
 on:
   push:
@@ -8,56 +8,43 @@ on:
 env:
   AWS_REGION: eu-north-1
   ECR_REPOSITORY: employee-app
-  ECS_SERVICE: employee-service
   ECS_CLUSTER: employee-cluster
-  ECS_TASK_DEFINITION: task-definition.json
-  CONTAINER_NAME: employee-app
+  ECS_SERVICE: employee-service
 
 jobs:
   deploy:
+
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout source
-        uses: actions/checkout@v4
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+    - name: Checkout source
+      uses: actions/checkout@v4
 
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Build Docker Image
-        run: |
-          docker build -t $ECR_REPOSITORY .
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Tag Docker Image
-        run: |
-          docker tag $ECR_REPOSITORY:latest \
-          ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:${{ github.sha }}
+    - name: Build Docker Image
+      run: |
+        docker build -t employee-app .
+        docker tag employee-app:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/employee-app:latest
 
-      - name: Push Docker Image
-        run: |
-          docker push \
-          ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:${{ github.sha }}
+    - name: Push Docker Image
+      run: |
+        docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/employee-app:latest
 
-      - name: Fill in new image ID
-        id: task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: task-definition.json
-          container-name: employee-app
-          image: ${{ steps.login-ecr.outputs.registry }}/employee-app:${{ github.sha }}
-
-      - name: Deploy to Amazon ECS
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
-        with:
-          task-definition: ${{ steps.task-def.outputs.task-definition }}
-          service: employee-service
-          cluster: employee-cluster
-          wait-for-service-stability: true
+    - name: Deploy ECS
+      run: |
+        aws ecs update-service \
+        --cluster employee-cluster \
+        --service employee-service \
+        --force-new-deployment \
+        --region eu-north-1
